@@ -229,6 +229,8 @@ class SSMTrainer:
         self.episode_rewards = []
         self.episode_steps = [] 
         self.loss = []
+        self.ac_losses = []
+        self.obs_losses = []
 
         os.makedirs("ssm\\episode_reward", exist_ok=True)
         os.makedirs("ssm\\episode_length", exist_ok=True)
@@ -287,6 +289,8 @@ class SSMTrainer:
             # Updating the policy :
             self.optimizer.zero_grad()
             ac_loss = self.agent.calculateLoss(self.config['gamma'])
+            self.ac_losses.append(ac_loss.item())
+            self.obs_losses.append(loss_obs.item())
             loss = ac_loss + loss_obs
             self.loss.append(loss.item())
             loss.backward()
