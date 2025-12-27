@@ -301,7 +301,7 @@ class SSMTrainer:
 
             # saving the model if episodes > 999 OR avg reward > 200 
             if i_episode != 0 and i_episode % 1000 == 0:
-                self.agent.save_checkpoint(optimizer=self.optimizer, filename="final_actor_critic.pt")    
+                self.agent.save_checkpoint(path=self.config['save_path'])    
            
             
             if i_episode % 20 == 0:
