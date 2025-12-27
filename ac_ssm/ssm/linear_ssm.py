@@ -228,6 +228,10 @@ class SSMTrainer:
         self.step_counter = 0
         self.episode_rewards = []
         self.episode_steps = [] 
+        self.loss = []
+
+        os.makedirs("ssm\\episode_reward", exist_ok=True)
+        os.makedirs("ssm\\episode_length", exist_ok=True)
 
 
     def is_safe(self, obs):
@@ -265,26 +269,26 @@ class SSMTrainer:
                 next_obs = torch.tensor(obs_.to_vect(), dtype=torch.float32).unsqueeze(0).to(self.device)
                 encoded_next_obs = self.agent.encode(next_obs)
 
-                loss_obs += F.mse_loss(output['x_tp1'], encoded_next_obs).mean()
+                
 
                 if not is_safe:
+                    # ToDo: monitor action and do_actions
+                    loss_obs += F.mse_loss(output['x_tp1'], encoded_next_obs).mean()
                     self.agent.rewards.append(reward)
 
                 episode_total_reward += reward
                 obs = obs_
 
                 if done:
-                    np.save("ICM\\episode_reward\\actions.npy",
-                            np.array([int(a) for a in actions], dtype=np.int32))
-                    logger.info(f"Saved actions for episode {i_episode} at ICM\\episode_reward\\actions.npy")
                     break
 
-            logger.info(f"Episode {i_episode} reward: {episode_total_reward}")  
+            #logger.info(f"Episode {i_episode} reward: {episode_total_reward}")  
             self.episode_rewards.append(episode_total_reward)  
             # Updating the policy :
             self.optimizer.zero_grad()
             ac_loss = self.agent.calculateLoss(self.config['gamma'])
             loss = ac_loss + loss_obs
+            self.loss.append(loss.item())
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.agent.parameters(), max_norm=0.5)
             self.optimizer.step()        
@@ -304,10 +308,12 @@ class SSMTrainer:
             survival_steps = t + 1          # because t is 0-indexed
             self.episode_steps.append(survival_steps)
 
-        save_episode_rewards(self.episode_rewards, save_dir="ICM\\episode_reward", filename="actor_critic_reward.npy")
-        logger.info(f"reward saved at ICM\\episode_reward")
-        os.makedirs("ICM\\episode_reward", exist_ok=True)
-        np.save("ICM\\episode_reward\\actor_critic_steps.npy", np.array(self.episode_steps, dtype=int))
+        save_episode_rewards(self.episode_rewards, save_dir="ssm\\episode_reward", filename="actor_critic_reward.npy")
+        logger.info(f"reward saved at ssm\\episode_reward")
+        
+        np.save("ssm\\episode_length\\actor_critic_steps.npy", np.array(self.episode_steps, dtype=int))
+        np.save("ssm\\episode_reward\\actor_critic_loss.npy", np.array(self.loss, dtype=np.float32))
+        
 
 
 
