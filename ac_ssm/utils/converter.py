@@ -22,7 +22,7 @@ class ActionConverter:
             self.sub_to_topo_end.append(idx)
 
     def init_action_converter(self):
-        self.actions = [self.env.action_space({})]
+        self.actions = []
         self.n_sub_actions = np.zeros(len(self.action_space.sub_info), dtype=int)
         for i, sub in enumerate(self.subs):
             
