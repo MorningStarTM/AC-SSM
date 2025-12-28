@@ -234,6 +234,7 @@ class SSMTrainer:
         self.loss = []
         self.ac_losses = []
         self.obs_losses = []
+        self.action_list = []
 
         os.makedirs("ssm\\episode_reward", exist_ok=True)
         os.makedirs("ssm\\episode_length", exist_ok=True)
@@ -250,7 +251,6 @@ class SSMTrainer:
     
     def train(self):
         running_reward = 0
-        actions = []
         for i_episode in range(0, self.config['episodes']):
             obs = self.env.reset()
             done = False
@@ -264,10 +264,11 @@ class SSMTrainer:
                 if not is_safe:
                     output = self.agent(obs.to_vect(), x_t=x_t)
                     x_t = output["x_tp1"].detach()
-                    actions.append(output['action'].cpu().numpy()[0])
+                    self.action_list.append(output['action'].cpu().numpy()[0])
                     grid_action = self.converter.act(output['action'].cpu().numpy()[0])
                 else:
                     grid_action = self.env.action_space({})
+                    self.action_list.append(58)
 
 
                 obs_, reward, done, _ = self.env.step(grid_action)
@@ -321,6 +322,8 @@ class SSMTrainer:
         
         np.save("ssm\\episode_length\\actor_critic_steps.npy", np.array(self.episode_steps, dtype=int))
         np.save("ssm\\episode_reward\\actor_critic_loss.npy", np.array(self.loss, dtype=np.float32))
+        np.save("ssm\\episode_reward\\actor_critic_actions.npy", np.array(self.action_list, dtype=np.float32))
+
         
 
 
