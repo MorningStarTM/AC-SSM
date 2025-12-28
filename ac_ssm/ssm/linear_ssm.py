@@ -35,10 +35,13 @@ class ACSSM(nn.Module):
         self.use_obs_in_policy = use_obs_in_policy
 
         # Optional encoder: map observation -> latent x_t
-        self.encoder = nn.Linear(obs_dim, state_dim)
+        self.encoder = nn.Sequential(
+                nn.Linear(obs_dim, 256), nn.ReLU(),
+                nn.Linear(256, state_dim)
+            )
 
         self.critic = nn.Sequential(
-            nn.Linear(493, 512), nn.ReLU(),
+            nn.Linear(self.obs_dim, 512), nn.ReLU(),
             nn.Linear(512, 1024), nn.ReLU(),
             nn.Linear(1024, 512), nn.ReLU(),
             nn.Linear(512, 256),
@@ -254,12 +257,13 @@ class SSMTrainer:
             episode_total_reward = 0
 
             loss_obs = 0.0
-
+            x_t = None
             for t in range(self.config['max_ep_len']):
 
                 is_safe = self.is_safe(obs)
                 if not is_safe:
-                    output = self.agent(obs.to_vect())
+                    output = self.agent(obs.to_vect(), x_t=x_t)
+                    x_t = output["x_tp1"].detach()
                     actions.append(output['action'].cpu().numpy()[0])
                     grid_action = self.converter.act(output['action'].cpu().numpy()[0])
                 else:
